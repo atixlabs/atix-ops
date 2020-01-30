@@ -12,6 +12,7 @@ The tools, scripts and configs that can be found here will help to:
 ## TOC
 
 - [TOC](#toc)
+- [How to inlcude in your project?](#how-to-inlcude-in-your-project)
 - [Directory Structure](#directory-structure)
 - [Remote Environment Setup](#remote-environment-setup)
   * [Prerequisites](#prerequisites)
@@ -32,7 +33,65 @@ The tools, scripts and configs that can be found here will help to:
 
 ## How to inlcude in your project?
 
-FIXME: https://medium.com/@porteneuve/mastering-git-subtrees-943d29a798ec
+We want to be able to:
+
+- Include changes from `atix-ops`.
+- Be able to edit some files and push it to our project repositories.
+- Pull changes (fixes, improvements) made in `atix-ops` to our project.
+
+We suggest using `git subree`. As explained [here](https://stackoverflow.com/a/31770147) subtree fits best that use case:
+
+> subtree is more like a system-based development, where your all repo contains everything at once, and you can modify any part.
+
+A nice tutorial can be found [here](https://www.atlassian.com/git/tutorials/git-subtree) and a more detailed explanation [here](https://medium.com/@porteneuve/mastering-git-subtrees-943d29a798ec)
+
+Steps to include ops in **your project**:
+
+1. Move to the project directory:
+
+```
+cd myProject
+```
+
+2. Add this repository as a remote: 
+
+```
+git remote add atix-ops git@gitlab.com:atixlabs/atix-ops.git
+```
+
+3. Initialize the subtree by grabbing `atix-ops` master and pulling it into `/ops` directory
+
+```
+git subtree add --prefix ops atix-ops master --squash
+```
+
+4. A new folder named `./ops` should have been created with `atix-ops` master contents and a commit showing that. For example:
+
+```
+commit f40bf124c49bbd53ae7f5d6f1c076e21cd4b4742
+Merge: d6f5b6b c8e5fce
+Author: Alan Verbner
+Date:   Thu Jan 30 13:44:07 2020 -0300
+
+    Merge commit 'c8e5fcef7f2c0a9a025ac1da71984aafce1c68e8' as 'ops'
+```
+
+5. You can now update files in `./ops` directory as you need (read steps below to see which ones are you supposed to edit).
+
+6. Push those changes to your repo as usual.
+
+```
+git add . 
+git commit -m "updated ops files in order to ..."
+git push origin $your_branch
+```
+
+7. If a new update has been pushed to `atix-ops` master, you can download the changes by doing:
+
+```
+git fetch atix-ops master # update the reference
+git subtree pull --prefix ops aix-ops master --squash # pull the changes into our repo
+```
 
 ## Directory Structure
 
