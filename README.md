@@ -327,6 +327,8 @@ In order to deploy to production the same ideas should be pursued but the follow
 
 The following tasks are not yet included in this process:
 
+- Create a set of GitlabCI pipeline examples to be used as starting point.
+- Improve GitlabCi pipelines to follow the recomendations mentioned [here](https://medium.com/@ryzmen/gitlab-fast-pipelines-stages-jobs-c51c829b9aa1).
 - Define a backup tool and execution steps to save in a separate server.
 - Define a standard monitoring tool to be used (It doesn't need to be self-hosted by us, it can be Data Dog for example).
 
