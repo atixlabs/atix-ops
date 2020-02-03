@@ -127,7 +127,7 @@ This playbook relies on [Ansible Galaxy](https://galaxy.ansible.com/), a reposit
 
 ### Prerequisites
 
-To setup a remote enviroment, what you need to do is:
+To setup a remote environment, what you need to do is:
 
 1. Launch the VPS instance (linux - Ubuntu or Debian stable version) and configure the `root`'s `authorized_keys` file in order to contain your public ssh key (Linode and AWS allow you to do this before launching the server). 
 2. Once the server is launched, configure the following domains for each environment (staging and uat): 
@@ -135,19 +135,16 @@ To setup a remote enviroment, what you need to do is:
   | Name                                          | Value                               | Type          |
   |-----------------------------------------------|-------------------------------------|---------------|
   | $project-$environment.atixlabs.com            | x.x.x.x                             | A Record      |
-  | api.$environment.$project.atixlabs.com        | $project-environent.atixlabs.com    | CNAME Record  |
-  | frontend.$environment.$project.atixlabs.com   | $project-environent.atixlabs.com    | CNAME Record  |
+  | *.$environment.$project.atixlabs.com          | $project-environent.atixlabs.com    | CNAME Record  |
 
 So, for example, the routing table for project `MyProject` should be:
 
   | Name                                          | Value                               | Type          |
   |-----------------------------------------------|-------------------------------------|---------------|
   | myproject-staging.atixlabs.com                | 173.10.33.86                        | A Record      |
-  | api.staging.myproject.atixlabs.com            | myproject-staging.atixlabs.com      | CNAME Record  |
-  | frontend.staging.myproject.atixlabs.com       | myproject-staging.atixlabs.com      | CNAME Record  |
+  | *.staging.myproject.atixlabs.com              | myproject-staging.atixlabs.com      | CNAME Record  |
   | myproject-uat.atixlabs.com                    | 173.23.54.61                        | A Record      |
-  | api.uat.myproject.atixlabs.com                | myproject-staging.atixlabs.com      | CNAME Record  |
-  | frontend.uat.myproject.atixlabs.com           | myproject-staging.atixlabs.com      | CNAME Record  |
+  | *.uat.myproject.atixlabs.com                  | myproject-staging.atixlabs.com      | CNAME Record  |
 
 _Note: Production is probably a separate case as it's likely the domain won't be `atixlabs.com`. That being said, we should try to keep `api.domain.com` as the API endpoint and `domain.com` for the frontend just to be consisten with our naming. This obviously should be agreed by the Product Owner and je must make the final decision._
 
