@@ -7,7 +7,24 @@
     "example": "examples"
   },
   "scripts": {
-    "update-toc": "markdown-toc  README.md -i"
+    "update-toc": "markdown-toc  README.md -i",
+    "release": "standard-version"
+  },
+  "standard-version": {
+    "types": [
+      {
+        "type": "feat",
+        "section": "Features"
+      },
+      {
+        "type": "fix",
+        "section": "Bug Fixes"
+      },
+      {
+        "type": "docs",
+        "section": "Docs"
+      }
+    ]
   },
   "repository": {
     "type": "git",
@@ -20,6 +37,7 @@
   },
   "homepage": "https://gitlab.com/atixlabs/atix-ops#readme",
   "devDependencies": {
-    "markdown-toc": "1.2.0"
+    "markdown-toc": "1.2.0",
+    "standard-version": "7.1.0"
   }
 }
