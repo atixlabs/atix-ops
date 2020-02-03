@@ -11,9 +11,18 @@ The tools, scripts and configs that can be found here will help to:
 
 ## TOC
 
-- [TOC](#toc)
-- [How to inlcude in your project?](#how-to-inlcude-in-your-project)
+<!-- toc -->
+
+- [Rationale](#rationale)
+- [Roadmap](#roadmap)
+- [Workflow](#workflow)
 - [Directory Structure](#directory-structure)
+- [Gitlab CI](#gitlab-ci)
+  * [Configuration - Merge and push permissions](#configuration---merge-and-push-permissions)
+  * [Configuring the project](#configuring-the-project)
+  * [Considerations](#considerations)
+  * [Running the Jobs Locally](#running-the-jobs-locally)
+- [How to include Ops scripts in your project?](#how-to-include-ops-scripts-in-your-project)
 - [Remote Environment Setup](#remote-environment-setup)
   * [Prerequisites](#prerequisites)
   * [Running the setup](#running-the-setup)
@@ -21,17 +30,120 @@ The tools, scripts and configs that can be found here will help to:
 - [Deploying the Apps](#deploying-the-apps)
   * [Architecture](#architecture)
   * [Docker Compose](#docker-compose)
-  * [GitlabCI](#gitlabci)
-    + [Workflow](#workflow)
-    + [Definitions](#definitions)
-    + [Examples](#examples)
+    + [Workflow Sample](#workflow-sample)
   * [Scripts](#scripts)
   * [FAQ](#faq-1)
 - [Production](#production)
 - [TO DO](#to-do)
 - [Built With](#built-with)
 
-## How to inlcude in your project?
+<!-- tocstop -->
+
+## Rationale
+
+We must deliver top quality and reliable solutions that meets each project user needs. In order to do so we need to be able to deploy and test our work as soon as possible to gather feedback from QC and the project stakeholders.
+
+To do so, the following requirements must be met:
+
+- Not let anyone merge a pull request with failing tests to any stable branch (aka. master, develop).
+- Be able to easily (i.e. automatically or with _just a click_) deploy to staging, UAT and production environments.
+- Minimize the infrastructure (ops) work and hassle when configuring before mentioned environments.
+- Easily grant (and revoke) access to our servers in order to troubleshoot any problems we might be experiencing (production, uat or staging).
+- Monitor our apps system load and application related metrics.
+
+## Roadmap
+
+1. [x] Get rid of Jenkins for CI tasks and start using GitlabCI
+    - [x] Configure new jobs to use GitlabCI.
+    - [ ] Monitor if our staging environment is able to deal with GitlabCI load (maybe some tweaks are needed)
+2. [x] Create our own private Docker Registry to host our images and move all the projects to a docker based deployment schema.
+3. [x] Create a unified deployment schema and create repository to hold common scripts and configuration examples.
+4. [ ] Replace Jenkins by [ArgoCD](https://argoproj.github.io/argo-cd/) and implement a green/blue deploy schema with QC team promotions.
+5. [ ] Add a tool to easily access our servers (something like gravitational teleport)
+
+## Workflow
+
+The proposed workflow utilized Gitlab CI/CD features to test, package and deploy the apps. The workflow is the following:
+
+1. People work and push their code to their own `feature/xxxx` branched. 
+2. Once they create a Merge Request, code is linted and tests are checked. If any error the merge will be blocked.
+3. If everything is ok and the code is merged to `develop` the code will be packaged using docker (i.e. a docker image will be created) and pushed to Atix Docker Registry.
+4. If a deploy needs to be made, devs need to update a deployment configuration file specifying which images are going to be deployed.
+5. Once that's done, we will use Gitlab's UI to invoke such deploys.
+
+## Directory Structure
+
+```
+├── ansible # Directory containing common Ansible files
+│   ├── gitlabci.pub # GitlabCI public key that will be used to deploy using ssh
+│   ├── install-roles.sh # Script to install playbook requirements
+│   ├── requirements.yml # Playbook dependencies
+│   ├── setup-environment.sh # Script to invoke ansible
+│   └── setup-environment.yml # Setup environment playbook
+├── docker # Directory containing common Docker files
+│   ├── deploy.sh # Script to deploy using docker-compose
+│   ├── destroy.sh # Script to destroy a deployed environment
+│   └── docker-compose-base.yml # Deployment definition
+├── examples # Example project configuration files
+└── $ENVIRONMENT # One for each environment i.e. staging, uat, production
+    ├── ansible # Environment deployment config
+    │   ├── custom-vars.json # SSH keys that will grant access to that environment over ssh
+    │   ├── hosts # Environment domain name or ip
+    │   └── ssh-keys # Keys that were configured in custom-vars.json
+    │       ├── key1.pub
+    │       └── key2.pub
+    └── docker # Docker environment config
+        └── .env # Environment variables to be used in docker-compose
+```
+
+_NOTE: files schemas are not described all of them have sample values that will help understanding how to configure them._
+
+## Gitlab CI 
+
+### Configuration - Merge and push permissions
+
+You need to configure the following settings when creating the repository:
+
+* Prevent merge pushes on develop and master
+  - To avoid people skipping pipeline's executions.
+  - Go to the project Gitlab Site, then `Settings (⚙) > Repository > Protected Branches (click on Expand)"` and configure:
+    + `master`: `allowed to merge (maintainers)`, `allowed to push (maintainers)`
+    + `develop`: `allowed to merge (developers + maintainers)`, `allowed to push (maintainers)`
+* Ask for the pipeline to succeed before merging.
+  - In order to not to break any important branch.
+  - Go to the project Gitlab Site, then `Settings (⚙) > General > Merge Requests (click on Expand) > Merge checks: "Pipelines must succeed"`
+
+### Configuring the project
+
+In order make GitlabCI to recognize a project, you need to declare a `.gitlab-ci.yml` file in the root folder. The configuration is quite similar to the ones used by CircleCI, Travis, etc. Full spec can be found [here](https://docs.gitlab.com/ee/ci/yaml/) although there are several templates that can be foun [here](./examples/). 
+
+- Do not forget to rename gitlab yaml files to `.gitlab-ci.yml` otherwise it won't be picked by the CI server.
+- Templates provided here should be enough for 80% of the time you need to configure a project. **Reusing them is encouraged as you will share the same configuration as other projects.**
+- Each project will use, in general, three different `.gitlab-ci.yml` files:
+  1. The one that builds and package the frontend.
+  2. The one that builds and package the backend.
+  3. The one that handles the deploys.
+
+### Considerations
+
+* Deploys must be declared as manual jobs.
+* Atix Docker Hub Credentials are stored as protected variables in Atix's Gitlab organization so you can use them to login and push the images.
+* Before deploying you need to update, commit and push the Docker Compose file specifying the image versions to be deployed.
+* **Don't forget to bump backend and api versions before building a new docker image or them will be replaced (that needs to be fixed).**
+* Try to use already defined images to run your jobs. If you can't find the one that you are looking for, you can create your own and push it to either Docker or Atix registry (i.e. the one we built with Docker with Docker-Compose installed).
+* You can access [Atix registry](https://docker.atixlabs.com) using your google credentials.
+
+### Running the Jobs Locally
+
+Steps can be found in this [blogpost](https://www.akitaonrails.com/2018/04/28/smalltips-running-gitlab-ci-runner-locally).
+
+Keep in mind that:
+
+- It might speed up your work as you don't need to push your `.gitlab-ci.yml` everything and wait for GitlabCI to pick the work
+- It _seems_ you can't make cache work if you run it locally.
+- It will checkout a remote commit so local code changes won't work (apparently this is made due to security reasons as your local job might deploy something by mistake. [Ref](https://gitlab.com/gitlab-org/gitlab-runner/issues/1359)).
+
+## How to include Ops scripts in your project?
 
 We want to be able to:
 
@@ -92,32 +204,6 @@ git push origin $your_branch
 git fetch atix-ops master # update the reference
 git subtree pull --prefix ops aix-ops master --squash # pull the changes into our repo
 ```
-
-## Directory Structure
-
-```
-├── ansible # Directory containing common Ansible files
-│   ├── gitlabci.pub # GitlabCI public key that will be used to deploy using ssh
-│   ├── install-roles.sh # Script to install playbook requirements
-│   ├── requirements.yml # Playbook dependencies
-│   ├── setup-environment.sh # Script to invoke ansible
-│   └── setup-environment.yml # Setup environment playbook
-├── docker # Directory containing common Docker files
-│   ├── deploy.sh # Script to deploy using docker-compose
-│   ├── destroy.sh # Script to destroy a deployed environment
-│   └── docker-compose-base.yml # Deployment definition
-└── $ENVIRONMENT # One for each environment i.e. staging, uat, production
-    ├── ansible # Environment deployment config
-    │   ├── custom-vars.json # SSH keys that will grant access to that environment over ssh
-    │   ├── hosts # Environment domain name or ip
-    │   └── ssh-keys # Keys that were configured in custom-vars.json
-    │       ├── key1.pub
-    │       └── key2.pub
-    └── docker # Docker environment config
-        └── .env # Environment variables to be used in docker-compose
-```
-
-_NOTE: files schemas are not described all of them have sample values that will help understanding how to configure them._
 
 ## Remote Environment Setup
 
@@ -229,15 +315,13 @@ The following containers are started:
   - It can be accessed only using ssh port redirect.
   - **Keep in mind that this is a basic monitoring schema as it's running on the same machine as the apps (using the same resources). It might not be responsive if a problem is happening on the server (like CPU exhaustion). Other tools like DataDog should be considered for production environments.**
 
-The following considerations should hold for all the app containers and images we create:
+The following considerations should hold for all the app containers and images we create (**Again, please refer to the examples provided in this repository before creating your own version**):
 
 1. Them must not hold any kind of state. Everything should be stored in the DB, on an external service or a docker mapped volume.
 2. We should be able to destroy and restart the containers without the risk of facing data loss (see the previous item).
 3. We must use the **exact same images** no matter the environment we are deploying to. **Staging and UAT images should work in production as well.** We can introduce any kind of switched and configurations (environment variables, mapped config files, etc) to be able to do so.
 
-### GitlabCI
-
-#### Workflow
+#### Workflow Sample
 
 1. Work on you features as usual.
 2. Once merging to `develop` branch, some checks will be ran (like unit or integration tests) on your repo and if everything is ok, a new image tagged with the version configured in the project (for example `package.json` or `pom.xml`) and the commit short-id will be pushed to Atix Docker Registry.
@@ -260,22 +344,11 @@ For example (as a simplification `app` is used to refer to the backend and the f
 10. If it's ok in `staging` we deploy it to `uat`
 11. If everything is ok, we merge to master and deploy to `production`.
 
-#### Definitions
-
-* Deploys must be declared as manual jobs.
-* Atix Docker Hub Credentials are stored as protected variables in Atix's Gitlab organization so you can use them to login and push the images.
-* Before deploying you need to update, commit and push the Docker Compose file specifying the image versions to be deployed.
-* **Don't forget to bump backend and api versions before building a new docker image or them will be replaced (that needs to be fixed).**
-* Try to use already defined images to run your jobs. If you can't find the one that you are looking for, you can create your own and push it to either Docker or Atix registry (i.e. the one we built with Docker with Docker-Compose installed).
-* You can access [Atix registry](https://docker.atixlabs.com) using your google credentials.
-
-#### Examples
-
-Sample job and deploy configurations can be found [here](./examples/). Do not forget to rename gitlab yaml files to `.gitlab-ci.yml` otherwise it won't be picked by the CI server.
-
 ### Scripts
 
 All the bash scripts included in this directory are supposed to be short and self explanatory. Please read them if you want to understand how do they work. Most of the time is just defining some values using the environment type (staging, uat) as parameter.
+
+Refer to [Directory Structure Section](#directory-structure) to find a description of the directories and scripts.
 
 ### FAQ
 
@@ -310,7 +383,7 @@ $ ./destroy "development"
 
 **A:** Builds should only be triggered when something is pushed to `develop`, `release/x.y.z` and `hotfix/xxxxx`.
 
-# Production
+## Production
 
 In order to deploy to production the same ideas should be pursued but the following things should be considered:
 
@@ -324,8 +397,12 @@ In order to deploy to production the same ideas should be pursued but the follow
 
 The following tasks are not yet included in this process:
 
-- Create a set of GitlabCI pipeline examples to be used as starting point.
-- Improve GitlabCi pipelines to follow the recomendations mentioned [here](https://medium.com/@ryzmen/gitlab-fast-pipelines-stages-jobs-c51c829b9aa1).
+- Create a set of GitlabCI pipeline examples to be used as starting point
+  - [x] Create React App Frontend
+  - [ ] NextJs app
+  - [ ] NodeJs Backend
+  - [x] Maven Based Spring boot app
+- Improve GitlabCi pipelines to follow the recommendations mentioned [here](https://medium.com/@ryzmen/gitlab-fast-pipelines-stages-jobs-c51c829b9aa1).
 - Define a backup tool and execution steps to save in a separate server.
 - Define a standard monitoring tool to be used (It doesn't need to be self-hosted by us, it can be Data Dog for example).
 
