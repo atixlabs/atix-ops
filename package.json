@@ -1,6 +1,6 @@
 {
   "name": "atix-ops",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "This repository proposes a standard base setup that can be used to launch and deploy dev, staging, uat and even production environments. It might be obvious but it's worth mentioning that it will depend on the architecture of the system to be deployed and the non-functional requirements the project has (amount of concurrent users that need to be served, the amount of data that needs to be processed or stored, etc).",
   "main": "index.js",
   "directories": {

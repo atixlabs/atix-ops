@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0](https://gitlab.com/atixlabs/atix-ops/compare/v1.0.0...v1.1.0) (2020-04-25)
+
+
+### Features
+
+* adds http to https supports. To do so Traefix version was fixed to 2.2 due to API changes ([3240ef2](https://gitlab.com/atixlabs/atix-ops/commit/3240ef24c29392f6dc5a3e55911625afc7326c1e)), closes [#12](https://gitlab.com/atixlabs/atix-ops/issues/12)
+
+
+### Bug Fixes
+
+* fix the versions that ansible galaxy needs to use ([2bbe546](https://gitlab.com/atixlabs/atix-ops/commit/2bbe546d74571c0ecf5ce3937f74243e41b1efa7)), closes [#13](https://gitlab.com/atixlabs/atix-ops/issues/13)
+* fixed maven examples to properly use a fixed version maven docker image ([e0ecdcc](https://gitlab.com/atixlabs/atix-ops/commit/e0ecdcc65cde3526c215eb5f4c6b1f61ec0b2e76)), closes [#7](https://gitlab.com/atixlabs/atix-ops/issues/7)
+
 ## 1.0.0 (2020-02-03)
 
 
