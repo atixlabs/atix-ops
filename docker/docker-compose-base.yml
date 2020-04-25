@@ -28,13 +28,15 @@ services:
       - "traefik.http.routers.frontend.tls=true"
       - "traefik.http.routers.frontend.tls.certresolver=le"
   proxy:
-    image: traefik
+    image: traefik:v2.2.0
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web-secure.address=:443"
       - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entryPoint.to=web-secure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
       - "--certificatesResolvers.le.acme.email=info@atixlabs.com"
       - "--certificatesResolvers.le.acme.storage=/certs/acme.json"
       - "--certificatesResolvers.le.acme.httpChallenge.entrypoint=web"
