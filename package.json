@@ -38,6 +38,6 @@
   "homepage": "https://gitlab.com/atixlabs/atix-ops#readme",
   "devDependencies": {
     "markdown-toc": "1.2.0",
-    "standard-version": "7.1.0"
+    "standard-version": "8.0.1"
   }
 }
